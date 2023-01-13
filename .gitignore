@@ -1,0 +1,15 @@
+# Ignorar carpetas
+dataframes
+list
+eff_vs_ptcut_vs_N
+loss_accuracy
+myproject
+old_results
+__pycache__
+response
+models
+
+# Ignorar archivos
+*.sw*
+*.png
+
