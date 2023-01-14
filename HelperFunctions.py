@@ -345,11 +345,18 @@ def plot_roc(fig,ax1,ax2,y_true, y_score, y_weight,threshold,frac_hh4b_pass, y_h
     idx = (np.abs(thresholds - threshold)).argmin()
     idx_best = np.sqrt( (1-tpr)*(1-tpr) + (fpr)*(fpr) ).argmin()
     threshold_best = thresholds[idx_best]
+    print(threshold_best)
+    print(y_hh4b)
+    print(y_hh4b[ y_hh4b > threshold_best ])
+    print(len(y_hh4b [ y_hh4b > threshold_best ] ))
+    print(len(y_hh4b))
     frac_hh4b_pass_best = float(len(y_hh4b [ y_hh4b > threshold_best ] )) / float(len(y_hh4b))
+    print(frac_hh4b_pass_best)
     if fancy_plot == False:
         ax1.plot(tpr, fpr, label = estimatorName,lw=lw,alpha=alpha_i,linestyle=linestyle,color=color)
         #ax1.scatter(tpr[idx], fpr[idx], label = "fixed threshold: %s  pass: %.2f" % (threshold, round(frac_hh4b_pass[0], 2)) ,color=color)
-        ax1.scatter(tpr[idx_best], fpr[idx_best], label = "best threshold: %s hh4b pass: %.2f" % (round(thresholds[idx_best],2), round(frac_hh4b_pass_best, 2)) ,color=color, facecolors='none',s=50)
+        ax1.scatter(tpr[idx_best], fpr[idx_best], label = "best threshold: %s hh4b pass: %s" % (thresholds[idx_best], frac_hh4b_pass_best) ,color=color, facecolors='none',s=50)
+        #ax1.scatter(tpr[idx_best], fpr[idx_best], label = "best threshold: %s hh4b pass: %.2f" % (round(thresholds[idx_best],2), round(frac_hh4b_pass_best, 2)) ,color=color, facecolors='none',s=50)
 
         ax1.set_xlabel('True Positive Rate (signal efficiency)')
         ax1.set_ylabel('False Positive Rate (1-background rejection)')

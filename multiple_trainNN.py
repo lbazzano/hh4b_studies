@@ -88,17 +88,17 @@ array_of_vector_string = [
 
 array_of_input_id =      [      
                            #"5_jets_pt_eta_phi_m_calib",  
-                           #"4_jets_pt_eta_phi_m_calib",
+                           "4_jets_pt_eta_phi_m_calib",
                            #"5_jets_pt_calib", 
-                           "4_jets_pt_calib", 
+                           #"4_jets_pt_calib", 
                            #"5_jets_ratio_XY_dphi_XY",
                            #"4_jets_ratio_XY_dphi_XY",
                            #
-                           #"4_jets_pt_eta_phi_m_uncalib",
+                           "4_jets_pt_eta_phi_m_uncalib",
                            #"4_jets_pt_eta_phi_calib",
                            #"4_jets_pt_eta_calib",
                            #"4_jets_eta_phi_calib", 
-                           "4_jets_pt_uncalib", 
+                           #"4_jets_pt_uncalib", 
                            #"1_jets_pt_calib",
                            #"2_jets_ratio_03_dphi_03"
                            #"pt_m_3_4_ratio_43_32_21_10"
@@ -106,14 +106,14 @@ array_of_input_id =      [
 
 array_of_input_labels =  [
                            #"5 jets (pt,eta,phi,m)",
-                           #"4 jets (pt,eta,phi,m)",
+                           "4 jets (pt,eta,phi,m)",
                            #"5 jets (pt)",
-                           "4 jets (pt)",
+                           #"4 jets (pt)",
                            #"5 jets ratio XY, dphi XY",
                            #"4 jets ratio XY, dphi XY",
                            #
-                           #"4 jets (pt,eta,phi,m) uncalibrated",
-                           "4 jets (pt) uncalibrated",
+                           "4 jets (pt,eta,phi,m) uncalibrated",
+                           #"4 jets (pt) uncalibrated",
                            #"4 jets (pt,eta,phi) calibrated",
                            #"4 jets (pt,eta) calibrated",
                            #"4 jets (eta,phi) calibrated",
@@ -129,20 +129,7 @@ nodes_vec     = [8  ,8  ,8  ]#,8  ]
 
 array_dict_all = dict(zip(array_of_input_id, zip(array_of_vector_string, array_of_input_id, array_of_input_labels, epochs_vec, batchSize_vec, layers_vec, nodes_vec)))
 
-# select inputs #
-keys = [
-        #"5_jets_pt_eta_phi_m_calib",
-        #"4_jets_pt_eta_phi_m_calib",
-        #"5_jets_pt_calib",
-        "4_jets_pt_calib",
-        #5_jets_ratio_XY_dphi_XY",
-        #"4_jets_ratio_XY_dphi_XY",
-        #"4_jets_pt_eta_phi_m_uncalib",
-        "4_jets_pt_uncalib",
-        ]
-# # # # # # # # #
-
-array_dict = {key: array_dict_all[key] for key in array_dict_all.keys() & keys}
+array_dict = {key: array_dict_all[key] for key in array_dict_all.keys()}
 array_dict = array_dict_all
 array_of_vector_string = []
 array_of_input_id      = []
@@ -185,9 +172,8 @@ s_or_b_column_vec = ["s_or_b_4","s_or_b_4in5"] #["s_or_b","s_or_b_4","s_or_b_4_i
 extraTag_vec = ["","_newSignal4in5"] #["","_newSignal4","_newSignal4inOrder","_newSignal4in5"]
 
 for s_or_b_column,extraTag in zip(s_or_b_column_vec,extraTag_vec):
-    df_orig = df
-    df = equalize(df_orig,s_or_b_column)
-    X_train_vec, X_test_vec, y_train_vec, y_predict_train_vec, w_train_vec, y_test_vec, y_predict_test_vec, w_test_vec, pred_signal_train_vec, pred_back_train_vec, pred_signal_w_train_vec, pred_back_w_train_vec, pred_signal_test_vec, pred_back_test_vec, pred_signal_w_test_vec, pred_back_w_test_vec, X_hh4b_vec, y_hh4b_vec, y_predict_hh4b_vec, w_hh4b_vec, pred_signal_hh4b_vec, pred_back_hh4b_vec, pred_signal_w_hh4b_vec, pred_back_w_hh4b_vec , pred_hh4b_vec, pred_hh4b_w_vec = HelperFunctions.trainAndPlot(df,array_of_vector_string,array_of_input_id,epochs_vec,batchSize_vec,layers_vec,df_hh4b,nodes_vec,uploadModel,s_or_b_column,extraTag,evaluate_pTcut)
+    df_equal = equalize(df,s_or_b_column)
+    X_train_vec, X_test_vec, y_train_vec, y_predict_train_vec, w_train_vec, y_test_vec, y_predict_test_vec, w_test_vec, pred_signal_train_vec, pred_back_train_vec, pred_signal_w_train_vec, pred_back_w_train_vec, pred_signal_test_vec, pred_back_test_vec, pred_signal_w_test_vec, pred_back_w_test_vec, X_hh4b_vec, y_hh4b_vec, y_predict_hh4b_vec, w_hh4b_vec, pred_signal_hh4b_vec, pred_back_hh4b_vec, pred_signal_w_hh4b_vec, pred_back_w_hh4b_vec , pred_hh4b_vec, pred_hh4b_w_vec = HelperFunctions.trainAndPlot(df_equal,array_of_vector_string,array_of_input_id,epochs_vec,batchSize_vec,layers_vec,df_hh4b,nodes_vec,uploadModel,s_or_b_column,extraTag,evaluate_pTcut)
     HelperFunctions.plotNNdist_addHH4B(pred_signal_train_vec, pred_back_train_vec, pred_signal_w_train_vec, pred_back_w_train_vec, pred_signal_test_vec, pred_back_test_vec, pred_signal_w_test_vec, pred_back_w_test_vec,array_of_input_id,pred_signal_hh4b_vec, pred_back_hh4b_vec, pred_signal_w_hh4b_vec, pred_back_w_hh4b_vec,pred_hh4b_vec, pred_hh4b_w_vec, normalize_NNoutput_hists, plotHH4B,extraTag)
     result_matrix.append([y_train_vec, y_predict_train_vec, w_train_vec, y_test_vec, y_predict_test_vec, w_test_vec, X_hh4b_vec, y_hh4b_vec, y_predict_hh4b_vec, w_hh4b_vec,X_train_vec, X_test_vec])
 
@@ -204,9 +190,12 @@ ax1 = fig.add_subplot()           # Add the primary axis
 ax2 = ax1.twinx()
 best_thresholds_signal = []
 for result,signalTag,color_vec,T in zip(result_matrix,s_or_b_column_vec,color_matrix,range(len(result_matrix))):
+    print("\n")
     best_thresholds = []
-    for y_train,y_predict_train,w_train,y_test,y_predict_test,w_test,y_hh4b,y_predict_hh4b,w_hh4b,X_train, X_test, color_i,input_id, style_i, input_label in zip(result[0],result[1],result[2],result[3],result[4],result[5],result[6],result[7],result[8],result[9],result[10],color_vec,array_of_input_id,style_vec,array_of_input_labels):
+    for y_train,y_predict_train,w_train,y_test,y_predict_test,w_test,X_hh4b,y_hh4b,y_predict_hh4b,w_hh4b,X_train, X_test, color_i,input_id, style_i, input_label in zip(result[0],result[1],result[2],result[3],result[4],result[5],result[6],result[7],result[8],result[9],result[10],result[11],color_vec,array_of_input_id,style_vec,array_of_input_labels):
+        print("\n")
         frac_hh4b_pass = HelperFunctions.get_pass_fraction(y_predict_hh4b,w_hh4b,threshold)
+        print(input_id,frac_hh4b_pass)
         best_threshold = HelperFunctions.plot_roc(fig,ax1,ax2,y_train,y_predict_train,w_train,threshold,frac_hh4b_pass,y_predict_hh4b,input_label+' - signal: '+signalTag,2,color=color_i,alpha_i=0.8,linestyle='solid',fancy_plot=doFancyPlot,do_zoom=zoom)
         best_thresholds.append(best_threshold)
         #HelperFunctions.plot_roc(y_test, y_predict_test, w_test ,threshold,frac_hh4b_pass,input_label+'_test_'+signalTag,   1,color=color_i,alpha_i=0.3,linestyle='dashed',fancy_plot=doFancyPlot)
@@ -217,23 +206,26 @@ for result,signalTag,color_vec,T in zip(result_matrix,s_or_b_column_vec,color_ma
 # ========================================================================================================================
 # asym triggers
 LUP = 1
-#colors = ['red','maroon','maroon','navy']
-colors = ['red']
-#sizes = [100,100,50,50]
-sizes = [100]
+colors = ['black','gray','black','gray','yellow']
+#colors = ['red']
+sizes = [110,110,40,40,100]
+#sizes = [100]
 #labels = ['(130,85,55,45) GeV cut (0.5 Eff)','(145,85,55,45) GeV cut (0.5 Eff)','(95,65,50,40) GeV cut (0.2 Eff)','(105,70,55,40) GeV cut (0.2 Eff)']
-labels = ['(135,85,60,45,35) GeV cut (0.5 Eff)']
+labels = ['(150,85,60,45) GeV cut (0.5 Eff)','(135,85,60,45) GeV cut (0.5 Eff)','(100,70,50,40) GeV cut (0.2 Eff)','(90,60,50,40) GeV cut (0.2 Eff)','(135,85,60,45,35) GeV cut (0.5 Eff)']
+#labels = ['(135,85,60,45,35) GeV cut (0.5 Eff)']
 #pt_threshs =[ [130, 85, 55, 45], [145, 85, 55, 45], [95, 65, 50, 40], [105, 70, 55, 40]]
-pt_threshs =[ [135, 85, 60, 45, 35]]
+pt_threshs =[ [150, 85, 60, 45], [135, 85, 60, 45], [100, 70, 50, 40], [90, 60, 50, 40],[35,85,60,45,35]]
+#pt_threshs =[ [135, 85, 60, 45, 35]]
 for pt_thresh,label,size,color in zip(pt_threshs,labels,sizes,colors):
     pt0_thresh = pt_thresh[0]
     pt1_thresh = pt_thresh[1]
     pt2_thresh = pt_thresh[2]
     pt3_thresh = pt_thresh[3]
+    df_equal = equalize(df,s_or_b_column)
     if len(pt_thresh) < 5:
-        x_,y_ = HelperFunctions.getPoint(df_orig,pt0_thresh,pt1_thresh,pt2_thresh,pt3_thresh,LUP)    
+        x_,y_ = HelperFunctions.getPoint(df_equal,pt0_thresh,pt1_thresh,pt2_thresh,pt3_thresh,LUP,is_pt4_thresh=False)
     elif len(pt_thresh) == 5:
-        x_,y_ = HelperFunctions.getPoint(df_orig,pt0_thresh,pt1_thresh,pt2_thresh,pt3_thresh,LUP,is_pt4_thresh=True,pt4_thresh=pt_thresh[4])    
+        x_,y_ = HelperFunctions.getPoint(df_equal,pt0_thresh,pt1_thresh,pt2_thresh,pt3_thresh,LUP,is_pt4_thresh=True,pt4_thresh=pt_thresh[4])    
     if doFancyPlot:
         ax1.scatter(y_,1.0/x_,label=label,s=size,color=color,edgecolors='black')
     else:
@@ -317,7 +309,7 @@ for result,signalTag,color_vec,T,best_thresholds in zip(result_matrix,s_or_b_col
         plt.title("NN Inputs: "+ input_label + "  Signal: "+signalTag)
         plt.legend()
         plt.grid()
-        #plt.yscale("log")
+        plt.yscale("log")
         plt.ylabel('Weighted Entries')
         plt.xlabel('$p_{T}$ [GeV]')
         plt.show()
@@ -335,14 +327,10 @@ for result,signalTag,color_vec,T,best_thresholds in zip(result_matrix,s_or_b_col
         plt.legend()
         plt.grid()
         plt.show()
-
-
-
-        '''
-        f0 = interpolate.interp1d(Y0/y0,x)
-        f1 = interpolate.interp1d(Y1/y1,x)
-        f2 = interpolate.interp1d(Y2/y2,x)
-        f3 = interpolate.interp1d(Y3/y3,x)
+        f0 = interpolate.interp1d(Y0[:-10]/y0[:-10],x[:-10])
+        f1 = interpolate.interp1d(Y1[:-10]/y1[:-10],x[:-10])
+        f2 = interpolate.interp1d(Y2[:-10]/y2[:-10],x[:-10])
+        f3 = interpolate.interp1d(Y3[:-10]/y3[:-10],x[:-10])
         x0_50 = f0(0.5)
         x1_50 = f1(0.5)
         x2_50 = f2(0.5)
@@ -353,7 +341,7 @@ for result,signalTag,color_vec,T,best_thresholds in zip(result_matrix,s_or_b_col
         x2_20 = f2(0.2)
         x3_20 = f3(0.2)
         print(x0_20,x1_20,x2_20,x3_20)
-        '''
+    
 
 
 
