@@ -32,7 +32,7 @@ slice_list = [
     "user.lbazzano.gtp_output_ntuple_JZ5.root",
     "user.lbazzano.gtp_output_ntuple_JZ6.root",
     "user.lbazzano.gtp_output_ntuple_JZ7.root",
-    "user.lbazzano.gtp_output_ntuple_JZ8.root",
+    #"user.lbazzano.gtp_output_ntuple_JZ8.root",
 ]
 xSec_list = [
     0.07893 * 0.97308,
@@ -43,7 +43,7 @@ xSec_list = [
     5.5408000000000006e-9 * 0.015524,
     3.2602e-10 * 0.010583,
     2.1738000000000003e-11 * 0.013063,
-    9.2954e-13 * 0.012908,
+    #9.2954e-13 * 0.012908,
     ]
 
 '''
@@ -52,17 +52,17 @@ slice_list = ["user.lbazzano.gtp_output_ntuple_hh4b.root"]
 xSec_list = [1]
 '''
 
-inputMoments = ["s_or_b","weight","mu",
-                "pt0","pt1","pt2","pt3","pt4",
-                "eta0","eta1","eta2","eta3","eta4",
-                "phi0","phi1","phi2","phi3","phi4",
-                "m0","m1","m2","m3","m4",
-                "nConstituents0","nConstituents1","nConstituents2","nConstituents3","nConstituents4",
-                "pt0_uncalib","pt1_uncalib","pt2_uncalib","pt3_uncalib","pt4_uncalib",
-                "eta0_uncalib","eta1_uncalib","eta2_uncalib","eta3_uncalib","eta4_uncalib",
-                "isHS0","isHS1","isHS2","isHS3","isHS4",
-                "pt0_t","pt1_t","pt2_t","pt3_t","pt4_t",
-                "eta0_t","eta1_t","eta2_t","eta3_t","eta4_t",
+inputMoments = ["s_or_b","weight","mu","HT_pt30", "HT_n8",
+                "pt0","pt1","pt2","pt3","pt4","pt5",
+                "eta0","eta1","eta2","eta3","eta4","eta5",
+                "phi0","phi1","phi2","phi3","phi4","phi5",
+                "m0","m1","m2","m3","m4","m5",
+                #"nConstituents0","nConstituents1","nConstituents2","nConstituents3","nConstituents4","nConstituents5",
+                "pt0_uncalib","pt1_uncalib","pt2_uncalib","pt3_uncalib","pt4_uncalib","pt5_uncalib",
+                "eta0_uncalib","eta1_uncalib","eta2_uncalib","eta3_uncalib","eta4_uncalib","eta5_uncalib",
+                "isHS0","isHS1","isHS2","isHS3","isHS4","isHS5",
+                "pt0_t","pt1_t","pt2_t","pt3_t","pt4_t","pt5_t",
+                #"eta0_t","eta1_t","eta2_t","eta3_t","eta4_t","eta5_t",
                 ]
 
 GeV = 1000  # scaling
@@ -108,9 +108,9 @@ for slice_name,xSec,slice_weight in zip(slice_list,xSec_list,slice_weights):
         # don't save events of low pt (reco, uncalib and true)
         if abs(entry.eta[0]) > 4 or abs(entry.eta[1]) > 4  or abs(entry.eta[2]) > 4 or abs(entry.eta[3]) > 4  :# or entry.pt[1]/GeV < minPt1 or entry.pt[2]/GeV < minPt2 or entry.pt[3]/GeV < minPt3:
             continue
-        #if entry.pt[0]/GeV < 30:# or entry.pt[1]/GeV < minPt1 or entry.pt[2]/GeV < minPt2 or entry.pt[3]/GeV < minPt3:
+        if entry.pt[0]/GeV < 30:# or entry.pt[1]/GeV < minPt1 or entry.pt[2]/GeV < minPt2 or entry.pt[3]/GeV < minPt3:
+            continue
         #    counter_minpt += 1
-        #    continue
         #if no truth jets matched, just write -1 in truth properties
         aMatch=False
         for isM in entry.isMatch:
@@ -122,11 +122,13 @@ for slice_name,xSec,slice_weight in zip(slice_list,xSec_list,slice_weights):
         pt_t_2 = -1
         pt_t_3 = -1
         pt_t_4 = -1
+        pt_t_5 = -1
         eta_t_0 = -1
         eta_t_1 = -1
         eta_t_2 = -1
         eta_t_3 = -1
         eta_t_4 = -1
+        eta_t_5 = -1
         if aMatch:
             p = 0
             for isM in entry.isMatch:
@@ -145,20 +147,34 @@ for slice_name,xSec,slice_weight in zip(slice_list,xSec_list,slice_weights):
                 elif isM ==4:
                     pt_t_4 = entry.pt_t[p]/GeV
                     eta_t_4 = entry.eta_t[p]
+                elif isM ==5:
+                    pt_t_5 = entry.pt_t[p]/GeV
+                    eta_t_5 = entry.eta_t[p]
                 p += 1
         else:
             counter_Z += 1
-        event = [entry.s_or_b if entry.s_or_b > 0 else 0, slice_weight, entry.mu,
-                entry.pt[0]/GeV,entry.pt[1]/GeV,entry.pt[2]/GeV,entry.pt[3]/GeV,entry.pt[4]/GeV,
-                entry.eta[0],entry.eta[1],entry.eta[2],entry.eta[3],entry.eta[4],
-                entry.phi[0],entry.phi[1],entry.phi[2],entry.phi[3],entry.phi[4],
-                entry.m[0]/GeV,entry.m[1]/GeV,entry.m[2]/GeV,entry.m[3]/GeV,entry.m[4]/GeV,
-                entry.nConstituents[0],entry.nConstituents[1],entry.nConstituents[2],entry.nConstituents[3],entry.nConstituents[4],
-                entry.pt_uncalib[0]/GeV,entry.pt_uncalib[1]/GeV,entry.pt_uncalib[2]/GeV,entry.pt_uncalib[3]/GeV,entry.pt_uncalib[4]/GeV,
-                entry.eta_uncalib[0],entry.eta_uncalib[1],entry.eta_uncalib[2],entry.eta_uncalib[3],entry.eta_uncalib[4],
-                entry.isHS[0],entry.isHS[1],entry.isHS[2],entry.isHS[3],entry.isHS[4],
-                pt_t_0, pt_t_1,pt_t_2, pt_t_3, pt_t_4,
-                eta_t_0, eta_t_1, eta_t_2, eta_t_3, eta_t_4,
+        HT_pt30 = 0.0
+        HT_n8 = 0.0
+        print(range(len(entry.pt)))
+        for jet_n in range(len(entry.pt)):
+            jet_pt_n = entry.pt[jet_n]/GeV
+            if jet_pt_n > 30:
+                HT_pt30 = HT_pt30 + jet_pt_n
+                print(HT_pt30)
+            if jet_n < 8:
+                HT_n8 = HT_n8 + jet_pt_n
+                print(HT_n8)
+
+        event = [entry.s_or_b if entry.s_or_b > 0 else 0, slice_weight, entry.mu, HT_pt30, HT_n8,
+                entry.pt[0]/GeV,entry.pt[1]/GeV,entry.pt[2]/GeV,entry.pt[3]/GeV,entry.pt[4]/GeV,entry.pt[5]/GeV,
+                entry.eta[0],entry.eta[1],entry.eta[2],entry.eta[3],entry.eta[4],entry.eta[5],
+                entry.phi[0],entry.phi[1],entry.phi[2],entry.phi[3],entry.phi[4],entry.phi[5],
+                entry.m[0]/GeV,entry.m[1]/GeV,entry.m[2]/GeV,entry.m[3]/GeV,entry.m[4]/GeV,entry.m[5]/GeV,
+                entry.pt_uncalib[0]/GeV,entry.pt_uncalib[1]/GeV,entry.pt_uncalib[2]/GeV,entry.pt_uncalib[3]/GeV,entry.pt_uncalib[4]/GeV,entry.pt_uncalib[5]/GeV,
+                entry.eta_uncalib[0],entry.eta_uncalib[1],entry.eta_uncalib[2],entry.eta_uncalib[3],entry.eta_uncalib[4],entry.eta_uncalib[5],
+                entry.isHS[0],entry.isHS[1],entry.isHS[2],entry.isHS[3],entry.isHS[4],entry.isHS[5],
+                pt_t_0, pt_t_1,pt_t_2, pt_t_3, pt_t_4, pt_t_5,
+                #eta_t_0, eta_t_1, eta_t_2, eta_t_3, eta_t_4, eta_t_5,
                 ]
         events.append(event) 
         nEvents += 1
@@ -365,75 +381,95 @@ df.loc[m, ['pt0', 'pt1']]  = ( df.loc[m, ['pt1',  'pt0']].values)
 df.loc[m, ['eta0','eta1']] = ( df.loc[m, ['eta1', 'eta0']].values)
 df.loc[m, ['phi0','phi1']] = ( df.loc[m, ['phi1', 'phi0']].values)
 df.loc[m, ['m0',  'm1']]   = ( df.loc[m, ['m1',   'm0']].values)
-df.loc[m, ['nConstituents0',  'nConstituents1']]   = ( df.loc[m, ['nConstituents1',   'nConstituents0']].values)
 df.loc[m, ['isHS0',  'isHS1']]   = ( df.loc[m, ['isHS1',   'isHS0']].values)
 m = df.pt0 < df.pt2
 df.loc[m, ['pt0', 'pt2']]  = ( df.loc[m, ['pt2',  'pt0']].values)
 df.loc[m, ['eta0','eta2']] = ( df.loc[m, ['eta2', 'eta0']].values)
 df.loc[m, ['phi0','phi2']] = ( df.loc[m, ['phi2', 'phi0']].values)
 df.loc[m, ['m0',  'm2']]   = ( df.loc[m, ['m2',   'm0']].values)
-df.loc[m, ['nConstituents0',  'nConstituents2']]   = ( df.loc[m, ['nConstituents2',   'nConstituents0']].values)
 df.loc[m, ['isHS0',  'isHS2']]   = ( df.loc[m, ['isHS2',   'isHS0']].values)
 m = df.pt0 < df.pt3
 df.loc[m, ['pt0', 'pt3']]  = ( df.loc[m, ['pt3',  'pt0']].values)
 df.loc[m, ['eta0','eta3']] = ( df.loc[m, ['eta3', 'eta0']].values)
 df.loc[m, ['phi0','phi3']] = ( df.loc[m, ['phi3', 'phi0']].values)
 df.loc[m, ['m0',  'm3']]   = ( df.loc[m, ['m3',   'm0']].values)
-df.loc[m, ['nConstituents0',  'nConstituents3']]   = ( df.loc[m, ['nConstituents3',   'nConstituents0']].values)
 df.loc[m, ['isHS0',  'isHS3']]   = ( df.loc[m, ['isHS3',   'isHS0']].values)
 m = df.pt0 < df.pt4
 df.loc[m, ['pt0', 'pt4']]  = ( df.loc[m, ['pt4',  'pt0']].values)
 df.loc[m, ['eta0','eta4']] = ( df.loc[m, ['eta4', 'eta0']].values)
 df.loc[m, ['phi0','phi4']] = ( df.loc[m, ['phi4', 'phi0']].values)
 df.loc[m, ['m0',  'm4']]   = ( df.loc[m, ['m4',   'm0']].values)
-df.loc[m, ['nConstituents0',  'nConstituents4']]   = ( df.loc[m, ['nConstituents4',   'nConstituents0']].values)
 df.loc[m, ['isHS0',  'isHS4']]   = ( df.loc[m, ['isHS4',   'isHS0']].values)
+m = df.pt0 < df.pt5
+df.loc[m, ['pt0', 'pt5']]  = ( df.loc[m, ['pt5',  'pt0']].values)
+df.loc[m, ['eta0','eta5']] = ( df.loc[m, ['eta5', 'eta0']].values)
+df.loc[m, ['phi0','phi5']] = ( df.loc[m, ['phi5', 'phi0']].values)
+df.loc[m, ['m0',  'm5']]   = ( df.loc[m, ['m5',   'm0']].values)
+df.loc[m, ['isHS0',  'isHS5']]   = ( df.loc[m, ['isHS5',   'isHS0']].values)
 
 m = df.pt1 < df.pt2
 df.loc[m, ['pt1', 'pt2']]  = ( df.loc[m, ['pt2', 'pt1']].values)
 df.loc[m, ['eta1','eta2']] = ( df.loc[m, ['eta2', 'eta1']].values)
 df.loc[m, ['phi1','phi2']] = ( df.loc[m, ['phi2', 'phi1']].values)
 df.loc[m, ['m1',  'm2']]   = ( df.loc[m, ['m2',   'm1']].values)
-df.loc[m, ['nConstituents1',  'nConstituents2']]   = ( df.loc[m, ['nConstituents2',   'nConstituents1']].values)
 df.loc[m, ['isHS1',  'isHS2']]   = ( df.loc[m, ['isHS2',   'isHS1']].values)
 m = df.pt1 < df.pt3
 df.loc[m, ['pt1', 'pt3']]  = ( df.loc[m, ['pt3',  'pt1']].values)
 df.loc[m, ['eta1','eta3']] = ( df.loc[m, ['eta3', 'eta1']].values)
 df.loc[m, ['phi1','phi3']] = ( df.loc[m, ['phi3', 'phi1']].values)
 df.loc[m, ['m1',  'm3']]   = ( df.loc[m, ['m3',   'm1']].values)
-df.loc[m, ['nConstituents1',  'nConstituents3']]   = ( df.loc[m, ['nConstituents3',   'nConstituents1']].values)
 df.loc[m, ['isHS1',  'isHS3']]   = ( df.loc[m, ['isHS2',   'isHS1']].values)
 m = df.pt1 < df.pt4
 df.loc[m, ['pt1', 'pt4']]  = ( df.loc[m, ['pt4',  'pt1']].values)
 df.loc[m, ['eta1','eta4']] = ( df.loc[m, ['eta4', 'eta1']].values)
 df.loc[m, ['phi1','phi4']] = ( df.loc[m, ['phi4', 'phi1']].values)
 df.loc[m, ['m1',  'm4']]   = ( df.loc[m, ['m4',   'm1']].values)
-df.loc[m, ['nConstituents1',  'nConstituents4']]   = ( df.loc[m, ['nConstituents4',   'nConstituents1']].values)
 df.loc[m, ['isHS1',  'isHS4']]   = ( df.loc[m, ['isHS4',   'isHS1']].values)
+m = df.pt1 < df.pt5
+df.loc[m, ['pt1', 'pt5']]  = ( df.loc[m, ['pt5',  'pt1']].values)
+df.loc[m, ['eta1','eta5']] = ( df.loc[m, ['eta5', 'eta1']].values)
+df.loc[m, ['phi1','phi5']] = ( df.loc[m, ['phi5', 'phi1']].values)
+df.loc[m, ['m1',  'm5']]   = ( df.loc[m, ['m5',   'm1']].values)
+df.loc[m, ['isHS1',  'isHS5']]   = ( df.loc[m, ['isHS5',   'isHS1']].values)
 
 m = df.pt2 < df.pt3
 df.loc[m, ['pt2', 'pt3']]  = ( df.loc[m, ['pt3',  'pt2']].values)
 df.loc[m, ['eta2','eta3']] = ( df.loc[m, ['eta3', 'eta2']].values)
 df.loc[m, ['phi2','phi3']] = ( df.loc[m, ['phi3', 'phi2']].values)
 df.loc[m, ['m2',  'm3']]   = ( df.loc[m, ['m3',   'm2']].values)
-df.loc[m, ['nConstituents2',  'nConstituents3']]   = ( df.loc[m, ['nConstituents3',   'nConstituents2']].values)
 df.loc[m, ['isHS2',  'isHS3']]   = ( df.loc[m, ['isHS3',   'isHS2']].values)
 m = df.pt2 < df.pt4
 df.loc[m, ['pt2', 'pt4']]  = ( df.loc[m, ['pt4',  'pt2']].values)
 df.loc[m, ['eta2','eta4']] = ( df.loc[m, ['eta4', 'eta2']].values)
 df.loc[m, ['phi2','phi4']] = ( df.loc[m, ['phi4', 'phi2']].values)
 df.loc[m, ['m2',  'm4']]   = ( df.loc[m, ['m4',   'm2']].values)
-df.loc[m, ['nConstituents2',  'nConstituents4']]   = ( df.loc[m, ['nConstituents4',   'nConstituents2']].values)
 df.loc[m, ['isHS2',  'isHS4']]   = ( df.loc[m, ['isHS4',   'isHS2']].values)
+m = df.pt2 < df.pt5
+df.loc[m, ['pt2', 'pt5']]  = ( df.loc[m, ['pt5',  'pt2']].values)
+df.loc[m, ['eta2','eta5']] = ( df.loc[m, ['eta5', 'eta2']].values)
+df.loc[m, ['phi2','phi5']] = ( df.loc[m, ['phi5', 'phi2']].values)
+df.loc[m, ['m2',  'm5']]   = ( df.loc[m, ['m5',   'm2']].values)
+df.loc[m, ['isHS2',  'isHS5']]   = ( df.loc[m, ['isHS5',   'isHS2']].values)
 
 m = df.pt3 < df.pt4
 df.loc[m, ['pt3', 'pt4']]  = ( df.loc[m, ['pt4',  'pt3']].values)
 df.loc[m, ['eta3','eta4']] = ( df.loc[m, ['eta4', 'eta3']].values)
 df.loc[m, ['phi3','phi4']] = ( df.loc[m, ['phi4', 'phi3']].values)
 df.loc[m, ['m3',  'm4']]   = ( df.loc[m, ['m4',   'm3']].values)
-df.loc[m, ['nConstituents3',  'nConstituents4']]   = ( df.loc[m, ['nConstituents4',   'nConstituents3']].values)
 df.loc[m, ['isHS3',  'isHS4']]   = ( df.loc[m, ['isHS4',   'isHS3']].values)
+m = df.pt3 < df.pt5
+df.loc[m, ['pt3', 'pt5']]  = ( df.loc[m, ['pt5',  'pt3']].values)
+df.loc[m, ['eta3','eta5']] = ( df.loc[m, ['eta5', 'eta3']].values)
+df.loc[m, ['phi3','phi5']] = ( df.loc[m, ['phi5', 'phi3']].values)
+df.loc[m, ['m3',  'm5']]   = ( df.loc[m, ['m5',   'm3']].values)
+df.loc[m, ['isHS3',  'isHS5']]   = ( df.loc[m, ['isHS5',   'isHS3']].values)
 
+m = df.pt4 < df.pt5
+df.loc[m, ['pt4', 'pt5']]  = ( df.loc[m, ['pt5',  'pt4']].values)
+df.loc[m, ['eta4','eta5']] = ( df.loc[m, ['eta5', 'eta4']].values)
+df.loc[m, ['phi4','phi5']] = ( df.loc[m, ['phi5', 'phi4']].values)
+df.loc[m, ['m4',  'm5']]   = ( df.loc[m, ['m5',   'm4']].values)
+df.loc[m, ['isHS4',  'isHS5']]   = ( df.loc[m, ['isHS5',   'isHS4']].values)
 # ========================================================================================================================
 # normalize weights ( mean(weights) = 1 )
 Weight_norm = sum(df['weight'])/len(df['weight'])
@@ -493,6 +529,11 @@ for var_name in inputMoments[3:]:
 # add already scaled variables to dataframe:
 # ratio
 print("calculating extra variables")
+df['ratio50'] = df['pt5']/df['pt0']
+df['ratio51'] = df['pt5']/df['pt1']
+df['ratio52'] = df['pt5']/df['pt2']
+df['ratio53'] = df['pt5']/df['pt3']
+df['ratio54'] = df['pt5']/df['pt4']
 df['ratio40'] = df['pt4']/df['pt0']
 df['ratio41'] = df['pt4']/df['pt1']
 df['ratio42'] = df['pt4']/df['pt2']
@@ -514,16 +555,21 @@ dphi01_vec = []
 dphi02_vec = []
 dphi03_vec = []
 dphi04_vec = []
+dphi05_vec = []
 dphi12_vec = []
 dphi13_vec = []
 dphi14_vec = []
+dphi15_vec = []
 dphi23_vec = []
 dphi24_vec = []
+dphi25_vec = []
 dphi34_vec = []
+dphi35_vec = []
+dphi45_vec = []
 dphi0X_vec = []
 dphiYZ_vec = []
-dphi0X5_vec = []
-dphiYZ5_vec = []
+#dphi0X5_vec = []
+#dphiYZ5_vec = []
 print("calculating delta phis")
 for event_n in tqdm.tqdm(range(len(df))):
     phi0 = df.iloc[event_n]['phi0']
@@ -531,26 +577,37 @@ for event_n in tqdm.tqdm(range(len(df))):
     phi2 = df.iloc[event_n]['phi2']
     phi3 = df.iloc[event_n]['phi3']
     phi4 = df.iloc[event_n]['phi4']
+    phi5 = df.iloc[event_n]['phi5']
     dphi01 = deltaPhi(phi0,phi1)
     dphi02 = deltaPhi(phi0,phi2)
     dphi03 = deltaPhi(phi0,phi3)
     dphi04 = deltaPhi(phi0,phi4)
+    dphi05 = deltaPhi(phi0,phi5)
     dphi12 = deltaPhi(phi1,phi2)
     dphi13 = deltaPhi(phi1,phi3)
     dphi14 = deltaPhi(phi1,phi4)
+    dphi15 = deltaPhi(phi1,phi5)
     dphi23 = deltaPhi(phi2,phi3)
     dphi24 = deltaPhi(phi2,phi4)
+    dphi25 = deltaPhi(phi2,phi5)
     dphi34 = deltaPhi(phi3,phi4)
+    dphi35 = deltaPhi(phi3,phi5)
+    dphi45 = deltaPhi(phi4,phi5)
     dphi01_vec.append(dphi01)
     dphi02_vec.append(dphi02)
     dphi03_vec.append(dphi03)
     dphi04_vec.append(dphi04)
+    dphi05_vec.append(dphi05)
     dphi12_vec.append(dphi12)
     dphi13_vec.append(dphi13)
     dphi14_vec.append(dphi14)
+    dphi15_vec.append(dphi15)
     dphi23_vec.append(dphi23)
     dphi24_vec.append(dphi24)
+    dphi25_vec.append(dphi25)
     dphi34_vec.append(dphi34)
+    dphi35_vec.append(dphi35)
+    dphi45_vec.append(dphi45)
     # dphi 0 123
     temp_dphi0X = [dphi01,dphi02,dphi03]
     max_ind = np.argmax(temp_dphi0X)
@@ -561,14 +618,14 @@ for event_n in tqdm.tqdm(range(len(df))):
     phiZ = others[1]
     dphiYZ_vec.append(deltaPhi(df.iloc[event_n][phiY],df.iloc[event_n][phiZ]))
     # dphi 0 1234
-    temp_dphi0X5 = [dphi01,dphi02,dphi03,dphi04]
-    max_ind = np.argmax(temp_dphi0X5)
-    dphi0X5_vec.append(temp_dphi0X5[max_ind])
-    others = ['phi1','phi2','phi3','phi4']
-    others.remove(others[max_ind])
-    temp_dphiYZ5 = [deltaPhi(df.iloc[event_n][others[0]],df.iloc[event_n][others[1]]), deltaPhi(df.iloc[event_n][others[0]],df.iloc[event_n][others[2]]), deltaPhi(df.iloc[event_n][others[1]],df.iloc[event_n][others[2]])]
-    max_ind = np.argmax(temp_dphiYZ5)
-    dphiYZ5_vec.append(temp_dphiYZ5[max_ind])
+    #temp_dphi0X5 = [dphi01,dphi02,dphi03,dphi04]
+    #max_ind = np.argmax(temp_dphi0X5)
+    #dphi0X5_vec.append(temp_dphi0X5[max_ind])
+    #others = ['phi1','phi2','phi3','phi4']
+    #others.remove(others[max_ind])
+    #temp_dphiYZ5 = [deltaPhi(df.iloc[event_n][others[0]],df.iloc[event_n][others[1]]), deltaPhi(df.iloc[event_n][others[0]],df.iloc[event_n][others[2]]), deltaPhi(df.iloc[event_n][others[1]],df.iloc[event_n][others[2]])]
+    #max_ind = np.argmax(temp_dphiYZ5)
+    #dphiYZ5_vec.append(temp_dphiYZ5[max_ind])
 
 
 df['dphi01'] = dphi01_vec
@@ -584,7 +641,7 @@ df['dphi34'] = dphi34_vec
 df['dphi0X'] = dphi0X_vec
 df['dphiYZ'] = dphiYZ_vec
 df['dphi0X5'] = dphi0X5_vec
-df['dphiYZ5'] = dphiYZ5_vec
+#df['dphiYZ5'] = dphiYZ5_vec
 
 # ========================================================================================================================
 # scale df variables
