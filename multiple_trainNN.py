@@ -15,6 +15,8 @@ from sklearn.model_selection import train_test_split
 from numpy.random import seed
 import math
 from scipy import interpolate
+import tensorflow_decision_forests as tfdf
+from tensorflow.keras.models import Sequential, model_from_json
 
 #import ROOT
 
@@ -92,8 +94,9 @@ df_hh4b = add_signal(df_hh4b)
 # set NN inputs
 array_of_vector_string = [ 
                            ["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4","pt5","eta5","phi5","m5"],
-                           ["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4"],
-                           ["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3"],
+                           ["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4","pt5","eta5","phi5","m5"],
+                           #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4"],
+                           #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3"],
                            #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","HT_pt30"],
                            #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","HT_n8"],
                            #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3"],
@@ -115,8 +118,10 @@ array_of_vector_string = [
 
 array_of_input_id =      [      
                            "6_jets_pt_eta_phi_m_calib",  
-                           "5_jets_pt_eta_phi_m_calib",  
-                           "4_jets_pt_eta_phi_m_calib",
+                           "6_jets_pt_eta_phi_m_calib",  
+                           #"5_jets_pt_eta_phi_m_calib",  
+                           #"4_jets_pt_eta_phi_m_calib",
+                           #"4_jets_pt_eta_phi_m_calib",
                            #"4_jets_pt_eta_phi_m_HT_pt30_calib",
                            #"4_jets_pt_eta_phi_m_HT_n8_calib",
                            #"4_jets_pt_eta_phi_m_calib",
@@ -138,8 +143,9 @@ array_of_input_id =      [
 
 array_of_input_labels =  [
                            "6 jets (pt,eta,phi,m)",
-                           "5 jets (pt,eta,phi,m)",
-                           "4 jets (pt,eta,phi,m)",
+                           "6 jets (pt,eta,phi,m)",
+                           #"5 jets (pt,eta,phi,m)",
+                           #"4 jets (pt,eta,phi,m)",
                            #"4 jets (pt,eta,phi,m), HT ( pt > 30 GeV )",
                            #"4 jets (pt,eta,phi,m), HT ( 8 jets)",
                            #"4 jets (pt,eta,phi,m)",
@@ -159,18 +165,19 @@ array_of_input_labels =  [
                            #"pt m 3 4, ratio 43 32 21 10"
                          ]
 
-epochs_vec    = [50 ,50 ,50 ,50 ,50, 50 ,50 ,50 ,50 ,50]
+epochs_vec    = [5 ,50 ,50 ,50 ,50, 50 ,50 ,50 ,50 ,50]
 batchSize_vec = [128,128,128,128,128,128,128,128,128,128]
 layers_vec    = [3  ,3  ,3  ,3  ,3  ,3  ,3  ,3  ,3  ,3  ]
 nodes_vec     = [8  ,8  ,8  ,8  ,8  ,8  ,8  ,8  ,8  ,8  ]
 
-signal_def    = ["s_or_b_4in6","s_or_b_4in5","s_or_b_4"]
-signal_labels    = ["4 HS in 6","4 HS in 5","4 HS in 4"]
+signal_def    = ["s_or_b_4in6","s_or_b_4in6","s_or_b_4in5","s_or_b_4"]
+signal_labels    = ["4 HS in 6","4 HS in 6","4 HS in 5","4 HS in 4"]
 signal_ROC    = ["s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b"]
 
+modelTypes = ["BDT_GBT","BDT_RF"]
 # ========================================================================================================================
 # settings
-uploadModel_vec = [False,False,False,False,False,False,False,False,False,False]
+uploadModel_vec = [False,False,False,False,False,False,False,False,False]
 #uploadModel_vec = [True,True,True,False]
 normalize_NNoutput_hists = True
 
@@ -188,11 +195,11 @@ evaluate_pTcut = 400.0
 importlib.reload(HelperFunctions)
 result_matrix = []
 
-for s_or_b_column,s_or_b_ROC,vector_string,input_id,epochs,batchSize,layers,nodes, uploadModel in zip(signal_def,signal_ROC,array_of_vector_string,array_of_input_id,epochs_vec,batchSize_vec,layers_vec,nodes_vec,uploadModel_vec):
+for s_or_b_column,s_or_b_ROC,vector_string,input_id,epochs,batchSize,layers,nodes,uploadModel,modelType in zip(signal_def,signal_ROC,array_of_vector_string,array_of_input_id,epochs_vec,batchSize_vec,layers_vec,nodes_vec,uploadModel_vec,modelTypes):
     df_equal = equalize(df,s_or_b_column)
-    X_train, X_test, y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b , pred_hh4b, pred_hh4b_w,X_QCD,y_QCD, y_predict_QCD,w_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w = HelperFunctions.trainAndPlot(df_equal,df,vector_string,input_id,epochs,batchSize,layers,nodes,df_hh4b,uploadModel,s_or_b_column,s_or_b_ROC,evaluate_pTcut)
-    HelperFunctions.plotNNdist_addHH4B(pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test,input_id,pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b,pred_hh4b, pred_hh4b_w, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w, normalize_NNoutput_hists,s_or_b_column,s_or_b_ROC)
-    result_matrix.append( [y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b,X_train, X_test,y_QCD,y_predict_QCD,w_QCD,X_QCD ] )
+    X_train, X_test, y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b , pred_hh4b, pred_hh4b_w,X_QCD,y_QCD, y_predict_QCD,w_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w = HelperFunctions.trainAndPlot(df_equal,df,vector_string,input_id,epochs,batchSize,layers,nodes,df_hh4b,uploadModel,s_or_b_column,s_or_b_ROC,evaluate_pTcut, modelType)
+    #HelperFunctions.plotNNdist_addHH4B(pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test,input_id,pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b,pred_hh4b, pred_hh4b_w, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w, normalize_NNoutput_hists,s_or_b_column,s_or_b_ROC)
+    #result_matrix.append( [y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b,X_train, X_test,y_QCD,y_predict_QCD,w_QCD,X_QCD ] )
     del df_equal
 
 

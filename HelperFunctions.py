@@ -14,6 +14,8 @@ from sklearn.metrics import roc_curve, plot_roc_curve, auc, roc_auc_score
 from sklearn.model_selection import train_test_split
 from numpy.random import seed
 import math
+import tensorflow_decision_forests as tfdf
+from tensorflow.keras.models import Sequential, model_from_json
 #import ROOT
 
 def getPoint(df,pt0_thresh,pt1_thresh,pt2_thresh,pt3_thresh,LUP,is_pt4_thresh=False,pt4_thresh=30):
@@ -51,7 +53,8 @@ def getHistosPred(X_,y_,w_,model):
         pred_w.append(float(w))
     return y_predict, pred_signal, pred_back, pred_signal_w, pred_back_w, pred_, pred_w
 
-def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,df_hh4b,uploadModel,s_or_b_column,s_or_b_ROC,evaluate_pTcut):
+def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,df_hh4b,uploadModel,s_or_b_column,s_or_b_ROC,evaluate_pTcut,modelType):
+
     # separate train and test sample
     X_train,X_test,y_train,y_test,w_train,w_test = train_test_split(
             df,               # input variables
@@ -61,123 +64,208 @@ def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,
             shuffle= True,
             #random_state = 1
             )
-    #
     pt0_train = X_train[["pt0"]]
     pt0_train.to_numpy()
-    #
-    X_train = X_train[vector_string]
-    X_train.to_numpy()
-    #
     pt0_test = X_test[["pt0"]]
-    X_test = X_test[vector_string]
-    X_test.to_numpy()
-    #
-    y_train.to_numpy()
-    y_test.to_numpy()
-    #
-    w_train.to_numpy()
-    w_test.to_numpy()
+    pt0_test.to_numpy()
 
-    if not uploadModel:
+    if "NN" in modelType:
+        X_train = X_train[vector_string]
+        X_train.to_numpy()
+        X_test = X_test[vector_string]
+        X_test.to_numpy()
+        y_train.to_numpy()
+        y_test.to_numpy()
+        w_train.to_numpy()
+        w_test.to_numpy()
+
+    if "BDT" in modelType:
+        ds_BDT_train = tfdf.keras.pd_dataframe_to_tf_dataset(X_train[[s_or_b_column]+vector_string], label=s_or_b_column)
+        ds_BDT_test  = tfdf.keras.pd_dataframe_to_tf_dataset(X_test[ [s_or_b_column]+vector_string],  label=s_or_b_column)
+
+    if "NN" in modelType:
+        if not uploadModel:
+            # ========================================================================================================================
+            # define the keras model
+            print("About to train a NN")
+            model = Sequential()
+            for layer in range(layers):
+                model.add(Dense(nodes, activation='relu'))
+            model.add(Dense(1, activation= 'sigmoid' ))
+            model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['accuracy'], weighted_metrics = [])
+            nEpochs      = epochs
+            batchSize    = batchSize#256#512
+            # ========================================================================================================================
+            # fit the keras model on the dataset
+            history = model.fit(X_train, y_train,
+                      #validation_data  = [X_test,y_test],
+                      sample_weight    = w_train,
+                      epochs           = nEpochs,
+                      batch_size       = batchSize,
+                      validation_split = 0.2)
+            loss = history.history['loss']
+            accuracy = history.history['accuracy']
+            val_loss = history.history['val_loss']
+            val_accuracy = history.history['val_accuracy']
+            # ========================================================================================================================
+            # evaluate the keras model
+            _, accuracy_total = model.evaluate(X_train, y_train)
+            print('Accuracy: %.2f' % (accuracy_total*100))
+            _, accuracy_total = model.evaluate(X_test, y_test)
+            print('Accuracy: %.2f' % (accuracy_total*100))
+            # ========================================================================================================================
+            # plot loss and accuracy
+            fig, [ax1, ax2] = plt.subplots(2, 1)
+            ax1.plot(loss,color='green',label="train")
+            ax1.plot(val_loss,color='red',label="validation")
+            ax1.set(xlabel="", ylabel="Loss")
+            ax1.legend(framealpha=0.2,loc='best')
+            ax1.grid()
+            #ax1.text(nEpochs, loss[-1],'loss', fontdict={'color':'green'})
+            #ax1.text(nEpochs, val_loss[-1],'val_loss', fontdict={'color':'red'})
+            ax2.plot(accuracy,color='green',label="train")
+            ax2.plot(val_accuracy,color='red',label="validation")
+            ax2.set(xlabel="#Epoch", ylabel="Accuracy")
+            ax2.legend(framealpha=0.2,loc='best')
+            ax2.grid()
+            #ax2.text(nEpochs, accuracy[-1],'accuracy', fontdict={'color':'green'})
+            #ax2.text(nEpochs, val_accuracy[-1],'val_accuracy', fontdict={'color':'red'})
+            ax1.title.set_text(input_id)
+            plt.savefig('loss_accuracy/loss_and_accuracy_weighted_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'.png')
+            plt.close('all')
+            # ========================================================================================================================
+            # save keras model
+            model.save("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5",save_format="tf")
+        elif uploadModel:
+            model = load_model("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5")
+
         # ========================================================================================================================
-        # define the keras model
-        model = Sequential()
-        for layer in range(layers):
-            model.add(Dense(nodes, activation='relu'))
-        model.add(Dense(1, activation= 'sigmoid' ))
-        model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['accuracy'], weighted_metrics = [])
-        nEpochs      = epochs
-        batchSize    = batchSize#256#512
-        # ========================================================================================================================
-        # fit the keras model on the dataset
-        history = model.fit(X_train, y_train,
-                  #validation_data  = [X_test,y_test],
-                  sample_weight    = w_train,
-                  epochs           = nEpochs,
-                  batch_size       = batchSize,
-                  validation_split = 0.2)
-        loss = history.history['loss']
-        accuracy = history.history['accuracy']
-        val_loss = history.history['val_loss']
-        val_accuracy = history.history['val_accuracy']
-        # ========================================================================================================================
-        # evaluate the keras model train
-        _, accuracy_total = model.evaluate(X_train, y_train)
-        print('Accuracy: %.2f' % (accuracy_total*100))
-        # ========================================================================================================================
-        # evaluate the keras model test
-        _, accuracy_total = model.evaluate(X_test, y_test)
-        print('Accuracy: %.2f' % (accuracy_total*100))
+        # make class predictions
+        if evaluate_pTcut > 0.0:
+            boolist = pt0_train.pt0 < evaluate_pTcut
+            X_train = X_train[boolist].to_numpy()
+            y_train = y_train[boolist].to_numpy()
+            w_train = w_train[boolist].to_numpy()
+            boolist = pt0_test.pt0 < evaluate_pTcut
+            X_test = X_test[boolist].to_numpy()
+            y_test = y_test[boolist].to_numpy()
+            w_test = w_test[boolist].to_numpy()
+        y_predict_train, pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, tot_train, tot_train_w = getHistosPred(X_train,y_train,w_train,model)
+        y_predict_test,  pred_signal_test,  pred_back_test,  pred_signal_w_test,  pred_back_w_test,  tot_test,  tot_test_w  = getHistosPred(X_test,y_test,w_test,model)
+        df_hh4b_columns = df_hh4b[vector_string].columns
+        pt0_hh4b = df_hh4b.loc[:,["pt0"]]
+        X_hh4b = df_hh4b.loc[:,df_hh4b_columns]
+        y_hh4b = df_hh4b[s_or_b_column]
+        w_hh4b = df_hh4b.weight
+        pt0_hh4b.to_numpy()
+        X_hh4b.to_numpy()
+        y_hh4b.to_numpy()
+        w_hh4b.to_numpy()
+        if evaluate_pTcut > 0.0:
+            boolist = pt0_hh4b.pt0 < evaluate_pTcut
+            X_hh4b = X_hh4b[boolist].to_numpy()
+            y_hh4b = y_hh4b[boolist].to_numpy()
+            w_hh4b = w_hh4b[boolist].to_numpy()
+        y_predict_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b, pred_hh4b, pred_hh4b_w  = getHistosPred(X_hh4b,y_hh4b,w_hh4b,model)
+        # QCD
+        y_QCD = df_QCD[s_or_b_ROC]
+        df_QCD_columns = df_QCD[vector_string].columns
+        pt0_QCD = df_QCD.loc[:,["pt0"]]
+        X_QCD = df_QCD.loc[:,df_QCD_columns]
+        w_QCD = df_QCD.weight
+        X_QCD.to_numpy()
+        y_QCD.to_numpy()
+        w_QCD.to_numpy()
+        if evaluate_pTcut > 0.0:
+            boolist = pt0_QCD.pt0 < evaluate_pTcut
+            X_QCD = X_QCD[boolist].to_numpy()
+            y_QCD = y_QCD[boolist].to_numpy()
+            w_QCD = w_QCD[boolist].to_numpy()
+        y_predict_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w  = getHistosPred(X_QCD,y_QCD,w_QCD,model)
+        return X_train, X_test, y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b, pred_hh4b, pred_hh4b_w,X_QCD, y_QCD,y_predict_QCD,w_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w
+
+    if "BDT" in modelType:
+        if not uploadModel:
+            # ========================================================================================================================
+
+            #####      # Maximum number of decision trees. The effective number of trained trees can be smaller if early stopping is enabled.
+            #####      NUM_TREES = 250
+            #####      # Minimum number of examples in a node.
+            #####      MIN_EXAMPLES = 6
+            #####      # Maximum depth of the tree. max_depth=1 means that all trees will be roots.
+            #####      MAX_DEPTH = 5
+            #####      # Ratio of the dataset (sampling without replacement) used to train individual trees for the random sampling method.
+            #####      SUBSAMPLE = 0.65
+            #####      # Control the sampling of the datasets used to train individual trees.
+            #####      SAMPLING_METHOD = "RANDOM"
+            #####      # Ratio of the training dataset used to monitor the training. Require to be >0 if early stopping is enabled.
+            #####      VALIDATION_RATIO = 0.1
+
+            # define the keras model
+            if "RF" in modelType:
+                model = tfdf.keras.RandomForestModel(verbose=2)
+            if "GBT" in modelType:
+                model = tfdf.keras.GradientBoostedTreesModel(verbose=2,num_trees=100, growing_strategy="BEST_FIRST_GLOBAL")#, max_depth=8)
+            # ========================================================================================================================
+            # fit the keras model on the dataset
+            history = model.fit(ds_BDT_train)
+            #          #validation_data  = [X_test,y_test],
+            #          sample_weight    = w_train,          ???????????????????????????????????????????????????????????????????????????????????????????????
+            #          validation_split = 0.2)
+            model.compile(metrics=["accuracy"])
+            # ========================================================================================================================
+            # evaluate the keras model
+            evaluation = model.evaluate(ds_BDT_test, return_dict=True)
+            for name, value in evaluation.items():
+              print(f"{name}: {value:.4f}")
+            print("loss:     "+str(history.history['loss']))
+            print("accuracy: "+str(history.history['accuracy']))
+            # ========================================================================================================================
+            # save keras model
+            model_json = model.to_json()
+            with open("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".json", "w") as json_file:
+                json_file.write(model_json)
+            model.save_weights("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5")
+
+        elif uploadModel:
+            print("NOT WORKING")
+            # # json_file = open("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".json", 'r')
+            # # loaded_model_json = json_file.read()
+            # # json_file.close()
+            # # loaded_model = model_from_json(loaded_model_json)
+            # # loaded_model.load_weights("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5")
+            # # #model = load_model("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5")
+        
+        with open("BDT_plots/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".html", "w") as f:
+            f.write(tfdf.model_plotter.plot_model(model,max_depth=4))
+
+        print("#############################################################################################################")
+        model.make_inspector().evaluation()
+        print("#############################################################################################################")
+        logs = model.make_inspector().training_logs()
+        
         # ========================================================================================================================
         # plot loss and accuracy
         fig, [ax1, ax2] = plt.subplots(2, 1)
-        ax1.plot(loss,color='green',label="train")
-        ax1.plot(val_loss,color='red',label="validation")
-        ax1.set(xlabel="", ylabel="Loss")
+        ax1.plot([log.num_trees for log in logs], [log.evaluation.loss for log in logs],color='green',label="train")
+        ax1.set(xlabel="", ylabel="LogLoss (out-of-bag)")
         ax1.legend(framealpha=0.2,loc='best')
         ax1.grid()
-        #ax1.text(nEpochs, loss[-1],'loss', fontdict={'color':'green'})
-        #ax1.text(nEpochs, val_loss[-1],'val_loss', fontdict={'color':'red'})
-        ax2.plot(accuracy,color='green',label="train")
-        ax2.plot(val_accuracy,color='red',label="validation")
-        ax2.set(xlabel="#Epoch", ylabel="Accuracy")
+        ax2.plot([log.num_trees for log in logs], [log.evaluation.accuracy for log in logs],color='green',label="train")
+        ax2.set(xlabel="#Tree", ylabel="Accuracy (out-of-bag)")
         ax2.legend(framealpha=0.2,loc='best')
         ax2.grid()
-        #ax2.text(nEpochs, accuracy[-1],'accuracy', fontdict={'color':'green'})
-        #ax2.text(nEpochs, val_accuracy[-1],'val_accuracy', fontdict={'color':'red'})
         ax1.title.set_text(input_id)
-        plt.savefig('loss_accuracy/loss_and_accuracy_weighted_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'.png')
+        plt.savefig("loss_accuracy/loss_and_accuracy_model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".png")
         plt.close('all')
         # ========================================================================================================================
-        # save keras model
-        model.save("models/model_"+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5")
-    elif uploadModel:
-        # to upload:
-        model = load_model("models/model_"+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5")
-    # ========================================================================================================================
-    # make class predictions
-    if evaluate_pTcut > 0.0:
-        boolist = pt0_train.pt0 < evaluate_pTcut
-        X_train = X_train[boolist].to_numpy()
-        y_train = y_train[boolist].to_numpy()
-        w_train = w_train[boolist].to_numpy()
-        boolist = pt0_test.pt0 < evaluate_pTcut
-        X_test = X_test[boolist].to_numpy()
-        y_test = y_test[boolist].to_numpy()
-        w_test = w_test[boolist].to_numpy()
-    y_predict_train, pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, tot_train, tot_train_w = getHistosPred(X_train,y_train,w_train,model)
-    y_predict_test,  pred_signal_test,  pred_back_test,  pred_signal_w_test,  pred_back_w_test,  tot_test,  tot_test_w  = getHistosPred(X_test,y_test,w_test,model)
-    df_hh4b_columns = df_hh4b[vector_string].columns
-    pt0_hh4b = df_hh4b.loc[:,["pt0"]]
-    X_hh4b = df_hh4b.loc[:,df_hh4b_columns]
-    y_hh4b = df_hh4b[s_or_b_column]
-    w_hh4b = df_hh4b.weight
-    pt0_hh4b.to_numpy()
-    X_hh4b.to_numpy()
-    y_hh4b.to_numpy()
-    w_hh4b.to_numpy()
-    if evaluate_pTcut > 0.0:
-        boolist = pt0_hh4b.pt0 < evaluate_pTcut
-        X_hh4b = X_hh4b[boolist].to_numpy()
-        y_hh4b = y_hh4b[boolist].to_numpy()
-        w_hh4b = w_hh4b[boolist].to_numpy()
-    y_predict_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b, pred_hh4b, pred_hh4b_w  = getHistosPred(X_hh4b,y_hh4b,w_hh4b,model)
-    # QCD
-    y_QCD = df_QCD[s_or_b_ROC]
-    df_QCD_columns = df_QCD[vector_string].columns
-    pt0_QCD = df_QCD.loc[:,["pt0"]]
-    X_QCD = df_QCD.loc[:,df_QCD_columns]
-    w_QCD = df_QCD.weight
-    X_QCD.to_numpy()
-    y_QCD.to_numpy()
-    w_QCD.to_numpy()
-    if evaluate_pTcut > 0.0:
-        boolist = pt0_QCD.pt0 < evaluate_pTcut
-        X_QCD = X_QCD[boolist].to_numpy()
-        y_QCD = y_QCD[boolist].to_numpy()
-        w_QCD = w_QCD[boolist].to_numpy()
-    y_predict_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w  = getHistosPred(X_QCD,y_QCD,w_QCD,model)
-    return X_train, X_test, y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b, pred_hh4b, pred_hh4b_w,X_QCD, y_QCD,y_predict_QCD,w_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w
+
+
+        print("#############################################################################################################")
+        model.summary()
+        print("#############################################################################################################")
+        return 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
 
 
 # plot NN output dists
@@ -317,8 +405,9 @@ def plot_roc(fig,ax1,ax2,y_true, y_score, y_weight,threshold,acceptance,frac_hh4
         #ax1.scatter(tpr_noZeros[idx], div[idx], label = "fixed threshold: %s  pass: %.2f" % (threshold, round(frac_hh4b_pass[0], 2)) ,color=color)
         ax1.scatter(tpr_noZeros[idx_fixAcc], div[idx_fixAcc], label = str(acceptance)+" acceptance threshold: %s  hh4b pass: %.2f" % (round(threshold_fixAcc,2), round(frac_hh4b_pass_fixAcc, 2)) ,color=color,marker='s')
         ax1.scatter(tpr_noZeros[idx_best], div[idx_best], label = "optimal threshold: %s  hh4b pass: %.2f" % (round(thresholds[idx_best],2), round(frac_hh4b_pass_best, 2)) ,color=color, facecolors='none',s=100)
-        ax1.set_xlabel('Signal Efficiency')
-        ax1.set_ylabel('1 / Background Efficiency')
+        ax1.set_xlabel(r'Signal Efficiency ($\epsilon_{S}$)')
+        #ax1.set_ylabel('1 / Background Efficiency')
+        ax1.set_ylabel(r'Backgroundg Rejection ($1/\epsilon_{B}$)')
         
         ax1.set_xlim([0.0, 1.0])
         #ax1.set_ylim([1., 10000.])
