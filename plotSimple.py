@@ -20,7 +20,7 @@ vec_df = [pd.read_pickle("dataframes/clean_ordered_dataframe.pkl"),pd.read_pickl
 vec_df_hh4b = [pd.read_pickle("dataframes/clean_ordered_dataframe_hh4b.pkl"), pd.read_pickle("dataframes/NOTclean_ordered_dataframe_hh4b.pkl")]
 vec_sample = ["All Slices (clean)","JZ0 JZ1 JZ2 (raw)"]
 
-vec_df = [df]
+vec_df = [df[df.pt1>65.8]]
 vec_df_hh4b = [df_hh4b]
 vec_sample = ["All Slices"]
 
@@ -32,7 +32,7 @@ vec_var = ["pt3"]
 vec_var = ['pt0', 'pt1', 'pt2', 'pt3', 'pt4', 'eta0','eta1', 'eta2', 'eta3', 'eta4', 'phi0', 'phi1', 'phi2', 'phi3', 'phi4','m0', 'm1', 'm2', 'm3', 'm4']
 sig = "s_or_b"
 Dens = False
-NBins = 1000
+NBins = 200
 
 ## other signal definitions
 #df['s_or_b_4']=((df.isHS0>=0)&(df.isHS1>=0)&(df.isHS2>=0)&(df.isHS3>=0)).astype(float)

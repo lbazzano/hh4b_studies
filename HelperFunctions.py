@@ -53,6 +53,7 @@ def getHistosPred(X_,y_,w_,model):
         pred_w.append(float(w))
     return y_predict, pred_signal, pred_back, pred_signal_w, pred_back_w, pred_, pred_w
 
+
 def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,df_hh4b,uploadModel,s_or_b_column,s_or_b_ROC,evaluate_pTcut,modelType):
 
     # separate train and test sample
@@ -82,6 +83,22 @@ def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,
     if "BDT" in modelType:
         ds_BDT_train = tfdf.keras.pd_dataframe_to_tf_dataset(X_train[[s_or_b_column]+vector_string], label=s_or_b_column)
         ds_BDT_test  = tfdf.keras.pd_dataframe_to_tf_dataset(X_test[ [s_or_b_column]+vector_string],  label=s_or_b_column)
+        # QCD
+        y_QCD = df_QCD[s_or_b_ROC]
+        y_QCD.to_numpy()
+        w_QCD = df_QCD.weight
+        w_QCD.to_numpy()
+        df_QCD_columns = df_QCD[vector_string].columns
+        X_QCD = df_QCD.loc[:,df_QCD_columns]
+        ds_BDT_QCD = tfdf.keras.pd_dataframe_to_tf_dataset(df_QCD[ [s_or_b_column]+vector_string],  label=s_or_b_column)
+        # hh4b
+        y_hh4b = df_hh4b[s_or_b_ROC]
+        y_hh4b.to_numpy()
+        w_hh4b = df_QCD.weight
+        w_hh4b.to_numpy()
+        df_hh4b_columns = df_hh4b[vector_string].columns
+        X_hh4b = df_hh4b.loc[:,df_hh4b_columns]
+        ds_BDT_hh4b = tfdf.keras.pd_dataframe_to_tf_dataset(df_hh4b[ [s_or_b_column]+vector_string],  label=s_or_b_column)
 
     if "NN" in modelType:
         if not uploadModel:
@@ -188,18 +205,20 @@ def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,
         if not uploadModel:
             # ========================================================================================================================
 
+            ##### exclude_non_specified_features=True,
+            ##### task=tfdf.keras.Task.CLASSIFICATION,
             #####      # Maximum number of decision trees. The effective number of trained trees can be smaller if early stopping is enabled.
-            #####      NUM_TREES = 250
+            #####      num_trees = 250
             #####      # Minimum number of examples in a node.
-            #####      MIN_EXAMPLES = 6
+            #####      min_examples = 6
             #####      # Maximum depth of the tree. max_depth=1 means that all trees will be roots.
-            #####      MAX_DEPTH = 5
+            #####      max_depth = 5
             #####      # Ratio of the dataset (sampling without replacement) used to train individual trees for the random sampling method.
-            #####      SUBSAMPLE = 0.65
+            #####      subsample = 0.65
             #####      # Control the sampling of the datasets used to train individual trees.
-            #####      SAMPLING_METHOD = "RANDOM"
+            #####      sampling_ratio = "RANDOM"
             #####      # Ratio of the training dataset used to monitor the training. Require to be >0 if early stopping is enabled.
-            #####      VALIDATION_RATIO = 0.1
+            #####      validation_ratio = 0.1
 
             # define the keras model
             if "RF" in modelType:
@@ -228,7 +247,7 @@ def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,
             model.save_weights("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".h5")
 
         elif uploadModel:
-            print("NOT WORKING")
+            print("NOT WORKING. Always train for now...")
             # # json_file = open("models/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".json", 'r')
             # # loaded_model_json = json_file.read()
             # # json_file.close()
@@ -239,12 +258,9 @@ def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,
         with open("BDT_plots/model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".html", "w") as f:
             f.write(tfdf.model_plotter.plot_model(model,max_depth=4))
 
-        print("#############################################################################################################")
-        model.make_inspector().evaluation()
+        # ========================================================================================================================
         print("#############################################################################################################")
         logs = model.make_inspector().training_logs()
-        
-        # ========================================================================================================================
         # plot loss and accuracy
         fig, [ax1, ax2] = plt.subplots(2, 1)
         ax1.plot([log.num_trees for log in logs], [log.evaluation.loss for log in logs],color='green',label="train")
@@ -259,49 +275,65 @@ def trainAndPlot(df,df_QCD,vector_string,input_id,epochs,batchSize,layers,nodes,
         plt.savefig("loss_accuracy/loss_and_accuracy_model_"+modelType+"_inputs_"+input_id+'_signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+".png")
         plt.close('all')
         # ========================================================================================================================
-
-
-        print("#############################################################################################################")
+        print("############################################################################################################# model.make_inspector().evaluation()")
+        model.make_inspector().evaluation()
+        print("############################################################################################################# model.summary()")
         model.summary()
-        print("#############################################################################################################")
-        return 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        print("############################################################################################################# model.predict()")
 
+
+        #y_predict_QCD  = model.predict(ds_BDT_QCD) #, batch_size=None, verbose='auto', steps=None, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False)
+        #y_predict_hh4b = model.predict(ds_BDT_hh4b)#, batch_size=None, verbose='auto', steps=None, callbacks=None, max_queue_size=10, workers=1, use_multiprocessing=False)
+        y_predict_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b, pred_hh4b, pred_hh4b_w  = getHistosPred(ds_BDT_hh4b,y_hh4b,w_hh4b,model)
+        y_predict_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w  = getHistosPred(ds_BDT_QCD,y_QCD,w_QCD,model)
+
+        y_QCD = y_QCD.to_numpy()
+        #y_predict_QCD = y_predict_QCD.to_numpy()
+        w_QCD = w_QCD.to_numpy()
+        y_hh4b = y_hh4b.to_numpy()
+        #y_predict_h44b = y_predict_hh4b.to_numpy()
+        w_hh4b = w_hh4b.to_numpy()
+
+        return 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,y_hh4b, y_predict_hh4b,w_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b, pred_hh4b, pred_hh4b_w, 0 , y_QCD,y_predict_QCD,w_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w
 
 
 # plot NN output dists
-def plotNNdist_addHH4B(pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test,input_id,pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b,pred_hh4b, pred_hh4b_w,pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w,Density, s_or_b_column, s_or_b_ROC):
+def plotNNdist_addHH4B(pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test,input_id,pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b,pred_hh4b, pred_hh4b_w,pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w,Density, s_or_b_column, s_or_b_ROC,modelType):
     plt.clf()
     nBins = np.linspace(0,1,30)
-    plt.hist(pred_signal_train,alpha=0.7, density=Density, histtype='stepfilled', label='QCD NN signal train ('+str(len(pred_signal_train))+' entries)',     bins=nBins, weights=pred_signal_w_train)
-    plt.hist(pred_back_train,  alpha=0.3, density=Density, histtype='stepfilled', label='QCD NN background train ('+str(len(pred_back_train))+' entries)', bins=nBins, weights=pred_back_w_train  )
-    plt.hist(pred_signal_test, alpha=1, density=Density, histtype='step', label='QCD NN signal test ('+str(len(pred_signal_test))+' entries)',     bins=nBins, weights=pred_signal_w_test,color="blue",linestyle=':')
-    plt.hist(pred_back_test,   alpha=1, density=Density, histtype='step', label='QCD NN background test ('+str(len(pred_back_test))+' entries)', bins=nBins, weights=pred_back_w_test ,color="orange" ,linestyle=':') 
+    if "NN" in modelType:
+        plt.hist(pred_signal_train,alpha=0.7, density=Density, histtype='stepfilled', label='QCD '+modelType+' signal train ('+str(len(pred_signal_train))+' entries)',     bins=nBins, weights=pred_signal_w_train)
+        plt.hist(pred_back_train,  alpha=0.3, density=Density, histtype='stepfilled', label='QCD '+modelType+' background train ('+str(len(pred_back_train))+' entries)', bins=nBins, weights=pred_back_w_train  )
+        plt.hist(pred_signal_test, alpha=1, density=Density, histtype='step', label='QCD '+modelType+' signal test ('+str(len(pred_signal_test))+' entries)',     bins=nBins, weights=pred_signal_w_test,color="blue",linestyle=':')
+        plt.hist(pred_back_test,   alpha=1, density=Density, histtype='step', label='QCD '+modelType+' background test ('+str(len(pred_back_test))+' entries)', bins=nBins, weights=pred_back_w_test ,color="orange" ,linestyle=':') 
+        #plt.legend(framealpha=0.5,loc='lower center',prop={'size': 8})
+        #plt.savefig('dist/NNoutput_normalized_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'_1.png')
+        #plt.legend('', frameon=False)
+        #plt.legend(framealpha=0.5,loc='lower center',prop={'size': 8})
+        #plt.savefig('dist/NNoutput_normalized_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'_2.png')
+        #plt.legend('', frameon=False)
+        #plt.hist(pred_signal_hh4b, alpha=1,   density=Density, histtype='step', label='HH4b signal',     bins=nBins, weights=pred_signal_w_hh4b,color = 'black',linestyle='dashed')
+        #plt.hist(pred_back_hh4b,   alpha=1,   density=Density, histtype='step', label='HH4b background', bins=nBins, weights=pred_back_w_hh4b,  color = 'gray' ,linestyle='dashed')
+
+    plt.hist(pred_signal_QCD,  alpha=1,   density=Density, histtype='step', label='QCD truth signal ('+str(len(pred_signal_QCD))+' entries)', bins=nBins, weights=pred_signal_w_QCD,  color = 'tab:green' ,linewidth=2)
+    plt.hist(pred_back_QCD,    alpha=1,   density=Density, histtype='step', label='QCD truth background ('+str(len(pred_back_QCD))+' entries)', bins=nBins, weights=pred_back_w_QCD,  color = 'tab:red' ,linewidth=2)
+    plt.hist(pred_hh4b,        alpha=1,   density=Density, histtype='step', label='HH4b ('+str(len(pred_hh4b))+' entries)', bins=nBins, weights=pred_hh4b_w,  color = 'black' ,linewidth=2)
+    plt.legend(framealpha=0.5,loc='lower center',prop={'size': 8})
 
     plt.yscale('log')
-    plt.xlabel("NN output")
+    plt.xlabel(modelType+" output")
     if Density:
         plt.ylabel('Weighted Normalized Entries')
     else:
         plt.ylabel('Weighted Entries (not normalized)')
-    plt.title('NNinput: '+input_id+' NNsignal: '+s_or_b_column+' ROCsignal:'+s_or_b_ROC)
+    plt.title(modelType+'input: '+input_id+' '+modelType+'signal: '+s_or_b_column+' ROCsignal:'+s_or_b_ROC)
     plt.grid()
     plt.ylim((0.0005,11))
-    #plt.legend(framealpha=0.5,loc='lower center',prop={'size': 8})
-    #plt.savefig('dist/NNoutput_normalized_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'_1.png')
-    #plt.legend('', frameon=False)
-    plt.hist(pred_signal_QCD,  alpha=1,   density=Density, histtype='step', label='QCD truth signal ('+str(len(pred_signal_QCD))+' entries)', bins=nBins, weights=pred_signal_w_QCD,  color = 'tab:green' ,linewidth=2)
-    plt.hist(pred_back_QCD,    alpha=1,   density=Density, histtype='step', label='QCD truth background ('+str(len(pred_back_QCD))+' entries)', bins=nBins, weights=pred_back_w_QCD,  color = 'tab:red' ,linewidth=2)
-    #plt.legend(framealpha=0.5,loc='lower center',prop={'size': 8})
-    #plt.savefig('dist/NNoutput_normalized_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'_2.png')
-    #plt.legend('', frameon=False)
-    plt.hist(pred_hh4b,        alpha=1,   density=Density, histtype='step', label='HH4b ('+str(len(pred_hh4b))+' entries)', bins=nBins, weights=pred_hh4b_w,  color = 'black' ,linewidth=2)
-    plt.legend(framealpha=0.5,loc='lower center',prop={'size': 8})
-    #plt.hist(pred_signal_hh4b, alpha=1,   density=Density, histtype='step', label='HH4b signal',     bins=nBins, weights=pred_signal_w_hh4b,color = 'black',linestyle='dashed')
-    #plt.hist(pred_back_hh4b,   alpha=1,   density=Density, histtype='step', label='HH4b background', bins=nBins, weights=pred_back_w_hh4b,  color = 'gray' ,linestyle='dashed')
+
     if Density:
-        plt.savefig('dist/NNoutput_normalized_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'.png')
+        plt.savefig('dist/'+modelType+'output_normalized_'+input_id+'_'+modelType+'signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'.png')
     else:
-        plt.savefig('dist/NNoutput_not_normalized_'+input_id+'_NNsignal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'.png')
+        plt.savefig('dist/'+modelType+'output_not_normalized_'+input_id+'_'+modelType+'signal_'+s_or_b_column+'_ROCsignal_'+s_or_b_ROC+'.png')
     plt.clf()
     plt.close('all')
 
@@ -365,7 +397,6 @@ def plot_roc(fig,ax1,ax2,y_true, y_score, y_weight,threshold,acceptance,frac_hh4
     fpr, tpr, thresholds = roc_curve(y_true, y_score,sample_weight=y_weight)
     idx = (np.abs(thresholds - threshold)).argmin()
     idx_fixAcc = (np.abs(tpr - acceptance)).argmin()
-    print(1/fpr[idx_fixAcc])
     threshold_fixAcc = thresholds[idx_fixAcc]
     idx_best = np.sqrt( (1-tpr)*(1-tpr) + (fpr)*(fpr) ).argmin()
     threshold_best = thresholds[idx_best]
@@ -419,9 +450,9 @@ def plot_roc(fig,ax1,ax2,y_true, y_score, y_weight,threshold,acceptance,frac_hh4
             ax1.set_ylim([1., 20.])
             ax2.set_xlim([0.7, 1.0])
             
-            ax1.set_xlim([0.85, 0.95])
-            ax1.set_ylim([2., 3])
-            ax2.set_xlim([0.85, 0.95])
+            #ax1.set_xlim([0.85, 0.95])
+            #ax1.set_ylim([2., 3])
+            #ax2.set_xlim([0.85, 0.95])
     #ax2.plot(tpr,  thresholds , lw=0.8,alpha=0.5,color=color)
     #ax2.set_ylabel('NN output threshold',alpha=0.5)
     #ax2.set_ylim([0.0, 1.0])

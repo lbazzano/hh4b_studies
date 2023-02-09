@@ -95,6 +95,7 @@ df_hh4b = add_signal(df_hh4b)
 array_of_vector_string = [ 
                            ["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4","pt5","eta5","phi5","m5"],
                            ["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4","pt5","eta5","phi5","m5"],
+                           ["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4","pt5","eta5","phi5","m5"],
                            #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","pt4","eta4","phi4","m4"],
                            #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3"],
                            #["pt0","pt1","pt2","pt3","eta0","eta1","eta2","eta3","phi0","phi1","phi2","phi3","m0","m1","m2","m3","HT_pt30"],
@@ -117,6 +118,7 @@ array_of_vector_string = [
                          ]
 
 array_of_input_id =      [      
+                           "6_jets_pt_eta_phi_m_calib",  
                            "6_jets_pt_eta_phi_m_calib",  
                            "6_jets_pt_eta_phi_m_calib",  
                            #"5_jets_pt_eta_phi_m_calib",  
@@ -144,6 +146,7 @@ array_of_input_id =      [
 array_of_input_labels =  [
                            "6 jets (pt,eta,phi,m)",
                            "6 jets (pt,eta,phi,m)",
+                           "6 jets (pt,eta,phi,m)",
                            #"5 jets (pt,eta,phi,m)",
                            #"4 jets (pt,eta,phi,m)",
                            #"4 jets (pt,eta,phi,m), HT ( pt > 30 GeV )",
@@ -165,16 +168,16 @@ array_of_input_labels =  [
                            #"pt m 3 4, ratio 43 32 21 10"
                          ]
 
-epochs_vec    = [5 ,50 ,50 ,50 ,50, 50 ,50 ,50 ,50 ,50]
+epochs_vec    = [50 ,50 ,50 ,50 ,50, 50 ,50 ,50 ,50 ,50]
 batchSize_vec = [128,128,128,128,128,128,128,128,128,128]
 layers_vec    = [3  ,3  ,3  ,3  ,3  ,3  ,3  ,3  ,3  ,3  ]
 nodes_vec     = [8  ,8  ,8  ,8  ,8  ,8  ,8  ,8  ,8  ,8  ]
 
-signal_def    = ["s_or_b_4in6","s_or_b_4in6","s_or_b_4in5","s_or_b_4"]
-signal_labels    = ["4 HS in 6","4 HS in 6","4 HS in 5","4 HS in 4"]
+signal_def    = ["s_or_b_4in6","s_or_b_4in5","s_or_b_4in5","s_or_b_4"]
+signal_labels    = ["4 HS in 5","4 HS in 5","4 HS in 5","4 HS in 4"]
 signal_ROC    = ["s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b","s_or_b"]
 
-modelTypes = ["BDT_GBT","BDT_RF"]
+modelTypes = ["NN","BDT_GBT","BDT_RF"]
 # ========================================================================================================================
 # settings
 uploadModel_vec = [False,False,False,False,False,False,False,False,False]
@@ -198,16 +201,19 @@ result_matrix = []
 for s_or_b_column,s_or_b_ROC,vector_string,input_id,epochs,batchSize,layers,nodes,uploadModel,modelType in zip(signal_def,signal_ROC,array_of_vector_string,array_of_input_id,epochs_vec,batchSize_vec,layers_vec,nodes_vec,uploadModel_vec,modelTypes):
     df_equal = equalize(df,s_or_b_column)
     X_train, X_test, y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b, pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b , pred_hh4b, pred_hh4b_w,X_QCD,y_QCD, y_predict_QCD,w_QCD, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w = HelperFunctions.trainAndPlot(df_equal,df,vector_string,input_id,epochs,batchSize,layers,nodes,df_hh4b,uploadModel,s_or_b_column,s_or_b_ROC,evaluate_pTcut, modelType)
-    #HelperFunctions.plotNNdist_addHH4B(pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test,input_id,pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b,pred_hh4b, pred_hh4b_w, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w, normalize_NNoutput_hists,s_or_b_column,s_or_b_ROC)
-    #result_matrix.append( [y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b,X_train, X_test,y_QCD,y_predict_QCD,w_QCD,X_QCD ] )
+    HelperFunctions.plotNNdist_addHH4B(pred_signal_train, pred_back_train, pred_signal_w_train, pred_back_w_train, pred_signal_test, pred_back_test, pred_signal_w_test, pred_back_w_test,input_id,pred_signal_hh4b, pred_back_hh4b, pred_signal_w_hh4b, pred_back_w_hh4b,pred_hh4b, pred_hh4b_w, pred_signal_QCD, pred_back_QCD, pred_signal_w_QCD, pred_back_w_QCD, pred_QCD, pred_QCD_w, normalize_NNoutput_hists,s_or_b_column,s_or_b_ROC,modelType)
+    if "NN" in modelType:
+        result_matrix.append( [y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b,X_train, X_test,y_QCD,y_predict_QCD,w_QCD,X_QCD ] )
+    elif "BDT" in modelType:
+        result_matrix.append( [y_QCD ,  y_predict_QCD, w_QCD , y_hh4b, y_predict_hh4b, w_hh4b])
     del df_equal
 
 
 # ========================================================================================================================
 # plot roc curves
 importlib.reload(HelperFunctions)
-doFancyPlot = True
-zoom = True
+doFancyPlot = False
+zoom = False
 threshold = 0.6
 acceptance = 0.9
 fig = plt.figure(figsize=(9,7),constrained_layout=True) # default is (8,6) 
@@ -219,10 +225,13 @@ best_thresholds = []
 fixAcc_thresholds = []
 colors = ["tab:orange","tab:purple","tab:red"]#,"tab:green","tab:blue","tab:brown","tab:pink","tab:gray","tab:olive","tab:cyan"]
 #colors = ["tab:red","tab:green","tab:blue"]
-for result,input_label,signalTag,color in zip(result_matrix,array_of_input_labels,signal_labels,colors):
-    y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, X_hh4b, y_hh4b, y_predict_hh4b, w_hh4b,X_train, X_test,y_QCD,y_predict_QCD,w_QCD,X_QCD  = result
+for result,input_label,signalTag,color,modelType in zip(result_matrix,array_of_input_labels,signal_labels,colors,modelTypes):
+    if "NN" in modelType:
+        y_train, y_predict_train, w_train, y_test, y_predict_test, w_test, X_hh4b,y_hh4b, y_predict_hh4b, w_hh4b,X_train, X_test,y_QCD,y_predict_QCD,w_QCD,X_QCD  = result
+    elif "BDT" in modelType:
+        y_QCD, y_predict_QCD, w_QCD, y_hh4b, y_predict_hh4b, w_hh4b = result
     frac_hh4b_pass = HelperFunctions.get_pass_fraction(y_predict_hh4b,w_hh4b,threshold)
-    best_threshold,fixAcc_threshold = HelperFunctions.plot_roc(fig,ax1,ax2,y_QCD,y_predict_QCD,w_QCD,threshold,acceptance,frac_hh4b_pass,y_predict_hh4b,input_label+' - NN signal: '+signalTag,2,color=color,alpha_i=0.8,linestyle='solid',fancy_plot=doFancyPlot,do_zoom=zoom,plotError=True)
+    best_threshold,fixAcc_threshold = HelperFunctions.plot_roc(fig,ax1,ax2,y_QCD,y_predict_QCD,w_QCD,threshold,acceptance,frac_hh4b_pass,y_predict_hh4b,input_label+' - '+modelType+' signal: '+signalTag,2,color=color,alpha_i=0.8,linestyle='solid',fancy_plot=doFancyPlot,do_zoom=zoom,plotError=True)
     #best_threshold,fixAcc_threshold = HelperFunctions.plot_roc(fig,ax1,ax2,y_train,y_predict_train,w_train,threshold,acceptance,frac_hh4b_pass,y_predict_hh4b,input_label+' - signal: '+signalTag,2,color=color,alpha_i=0.8,linestyle='dotted',fancy_plot=doFancyPlot,do_zoom=zoom)
     best_thresholds.append(best_threshold)
     fixAcc_thresholds.append(fixAcc_threshold)
